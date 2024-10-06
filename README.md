@@ -1,6 +1,4 @@
 # Li_Project_01
-# BIOS6624-Kehan2
-
 
 ## Overview
 
