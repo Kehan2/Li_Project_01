@@ -1,0 +1,133 @@
+---
+title: "Analysis of Lead Exposure and IQ Levels"
+author: "Data Analysis Report"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 6
+)
+
+# Load required packages
+library(tidyverse)
+library(knitr)
+library(readr)
+```
+
+## Introduction
+
+This report analyzes the relationship between proximity to a lead-emitting ore smelter and IQ scores in children from El Paso. The data comes from a CDC-led research team investigating the effects of low-level lead absorption on neurological function in children aged 3-15 years.
+
+## Data Loading and Initial Processing
+
+```{r load_data}
+# Create the dataset
+data <- read_csv("lead-iq-01.csv")
+# Calculate initial summary statistics
+
+means_by_location <- data %>%
+  group_by(Smelter) %>%
+  summarise(
+    mean_iq = mean(IQ),
+    sd_iq = sd(IQ),
+    n = n()
+  )
+```
+
+## Initial Analysis
+
+### Visualization of IQ Levels by Location
+
+```{r initial_plot, fig.cap="Distribution of IQ Scores by Proximity to Smelter (Before Correction)"}
+ggplot(data, aes(x = Smelter, y = IQ)) +
+  geom_boxplot(fill = "lightblue", alpha = 0.5) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "darkblue") +
+  theme_minimal() +
+  labs(
+    title = "Distribution of IQ Scores by Proximity to Smelter",
+    x = "Distance from Smelter",
+    y = "IQ Score"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 9)
+  )
+```
+
+The initial boxplot reveals an unusual observation in the "Far" group with an IQ score of 999, which appears to be a data entry error.
+
+### Initial Summary Statistics
+
+```{r initial_summary}
+  kable(means_by_location,
+    col.names = c("Location", "Mean IQ", "SD", "N"),
+    digits = 2,
+    caption = "Summary Statistics of IQ Scores by Location (Before Correction)"
+  )
+
+
+```
+
+## Corrected Analysis
+
+After consulting with the primary investigator, we learned that the IQ value of 999 should be 99. Let's correct this error and reanalyze the data.
+
+```{r update_data}
+# Fix the incorrect value
+data$IQ[data$IQ == 999] <- 99
+
+# Recalculate means
+updated_means <- data %>%
+  group_by(Smelter) %>%
+  summarise(
+    mean_iq = mean(IQ),
+    sd_iq = sd(IQ),
+    n = n()
+  )
+
+
+```
+
+### Updated Visualization
+
+```{r corrected_plot, fig.cap="Distribution of IQ Scores by Proximity to Smelter (After Correction)"}
+ggplot(data, aes(x = Smelter, y = IQ)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.5) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "darkgreen") +
+  theme_minimal() +
+  labs(
+    title = "Distribution of IQ Scores by Proximity to Smelter (Corrected Data)",
+    x = "Distance from Smelter",
+    y = "IQ Score"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 9)
+  )
+
+```
+
+### Updated Summary Statistics
+
+```{r corrected_summary}
+kable(updated_means,
+      caption = "Summary Statistics of IQ Scores by Location (After Correction)",
+      col.names = c("Location", "Mean IQ", "SD", "N"),
+      digits = 2)
+```
+
+## Results and Discussion
+
+After correcting the data entry error, we can see that children living far from the smelter have a mean IQ of `r round(updated_means$mean_iq[updated_means$Smelter == "Far"], 2)` (SD = `r round(updated_means$sd_iq[updated_means$Smelter == "Far"], 2)`), while those living near the smelter have a mean IQ of `r round(updated_means$mean_iq[updated_means$Smelter == "Near"], 2)` (SD = `r round(updated_means$sd_iq[updated_means$Smelter == "Near"], 2)`).
+
+The corrected visualization and summary statistics show a clear difference in IQ scores between the two groups, with children living far from the smelter showing generally higher IQ scores than those living near the smelter. This suggests a possible relationship between proximity to the lead-emitting smelter and cognitive development as measured by IQ scores.
